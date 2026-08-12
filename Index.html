@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Lễ Tân Check-in - Taekwondo Kids</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .glass-header {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(8px);
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen pb-12">
+
+  <!-- Header Section -->
+  <header class="glass-header text-white sticky top-0 z-30 shadow-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <!-- Logo Trung Tâm Taekwondo KIDS -->
+        <div class="bg-white p-1 rounded-xl shadow-md border border-slate-200 flex items-center justify-center h-11 w-auto shrink-0">
+          <img src="https://drive.google.com/thumbnail?id=1RW5aRHcgSFkAE8qzZlhSoDGKtWxBFGMs&sz=w500" alt="Taekwondo KIDS Logo" class="h-9 w-auto object-contain">
+        </div>
+        <div>
+          <h1 class="text-base md:text-xl font-bold tracking-tight text-white leading-tight">LỄ TÂN CHECK-IN VÕ SINH</h1>
+          <p class="text-xs text-slate-400">
+            Nguồn: <span id="sourceTitle" class="font-bold text-slate-200">Đang tải...</span>
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <!-- Nút CMS Đổi File CHỈ HIỂN THỊ đối với Quản trị viên (minhnguyen.ymc@gmail.com) -->
+        <button id="btnCmsAdmin" onclick="openConfigModal()" class="hidden bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-amber-400 text-xs font-semibold py-2.5 px-3.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 whitespace-nowrap shadow-sm">
+          <i class="fa-solid fa-shield-halved"></i> CMS Đổi File Admin
+        </button>
+        <button onclick="loadData()" id="btnReload" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-200 text-xs font-semibold py-2.5 px-3.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 whitespace-nowrap shadow-sm">
+          <i class="fa-solid fa-rotate-right" id="reloadIcon"></i> Làm mới
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-3 sm:px-4 mt-4 space-y-4">
+
+    <!-- UƯ TIÊN HÀNG ĐẦU: Thanh Tìm Kiếm Tinh Gọn Nổi Bật -->
+    <div class="bg-gradient-to-r from-red-50 via-slate-50 to-amber-50 p-4 sm:p-5 rounded-2xl shadow-md border-2 border-red-400">
+      <label for="searchInput" class="flex items-center gap-1.5 text-sm sm:text-base font-extrabold text-red-700 uppercase tracking-wide mb-2">
+        <i class="fa-solid fa-magnifying-glass text-red-500 text-base sm:text-lg"></i> Tra cứu thông tin võ sinh
+      </label>
+      <div class="relative">
+        <i class="fa-solid fa-bolt absolute left-3.5 top-3.5 sm:top-4 text-amber-500 text-base sm:text-lg"></i>
+        <input type="text" id="searchInput" oninput="applyFilters()" 
+               placeholder="Gõ SBD (vd: 1001), Họ Tên (không dấu/có dấu), Mã VTF ID..." 
+               class="w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-3 sm:py-3.5 bg-white border-2 border-red-400 rounded-xl text-base font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-4 focus:ring-red-200 focus:border-red-600 shadow-sm transition">
+        <button id="btnClearSearch" onclick="clearSearch()" class="hidden absolute right-3.5 top-3 sm:top-3.5 text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-circle-xmark text-lg sm:text-xl"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Cụm Thống Kê Tiến Độ & Bộ Lọc Tùy Chọn (Đóng Mở Thu Gọn) -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button onclick="toggleStats()" class="flex items-center justify-between w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 transition text-left">
+        <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-red-600"></i> BỘ LỌC & THỐNG KÊ TIẾN ĐỘ 
+          <span class="text-slate-500 font-normal">
+            (<span id="statSummaryText">Đã check-in 0/0 - 0%</span>)
+          </span>
+        </span>
+        <span class="text-xs font-semibold text-red-600 flex items-center gap-1">
+          <span id="statsToggleLabel">Mở bộ lọc & Thống kê</span>
+          <i class="fa-solid fa-chevron-down transition-transform duration-200" id="statsChevron"></i>
+        </span>
+      </button>
+
+      <div id="statsPanel" class="hidden p-4 border-t border-slate-200 bg-slate-50/50 space-y-4">
+        <!-- 4 Thẻ Thống kê -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+            <p class="text-[11px] font-semibold text-slate-500 uppercase">Tổng Thí Sinh</p>
+            <p class="text-xl font-extrabold text-slate-800 mt-0.5" id="statTotal">0</p>
+          </div>
+          <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+            <p class="text-[11px] font-semibold text-emerald-600 uppercase">Đã Check-in</p>
+            <p class="text-xl font-extrabold text-emerald-600 mt-0.5" id="statCheckedIn">0</p>
+          </div>
+          <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+            <p class="text-[11px] font-semibold text-amber-600 uppercase">Chưa Check-in</p>
+            <p class="text-xl font-extrabold text-amber-600 mt-0.5" id="statPending">0</p>
+          </div>
+          <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+            <p class="text-[11px] font-semibold text-blue-600 uppercase">Tỷ Lệ Hiển Diện</p>
+            <p class="text-xl font-extrabold text-blue-600 mt-0.5" id="statProgress">0%</p>
+          </div>
+        </div>
+
+        <!-- 3 Bộ lọc tùy chọn -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-200">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Trạng thái Check-in</label>
+            <select id="filterStatus" onchange="applyFilters()" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm">
+              <option value="ALL" selected>Tất cả trạng thái</option>
+              <option value="PENDING">Chưa Check-in</option>
+              <option value="CHECKED_IN">Đã Check-in</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Đẳng dự thi</label>
+            <select id="filterCap" onchange="applyFilters()" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm">
+              <option value="ALL">Tất cả cấp/đẳng</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Sân thi</label>
+            <select id="filterSan" onchange="applyFilters()" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm">
+              <option value="ALL">Tất cả sân thi</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thông báo Toast -->
+    <div id="toastAlert" class="hidden p-3.5 sm:p-4 rounded-xl shadow-md text-xs sm:text-sm font-medium flex items-center justify-between transition-all">
+      <span id="toastMessage"></span>
+      <button onclick="hideToast()" class="text-xs opacity-75 hover:opacity-100 ml-4 font-bold">Đóng</button>
+    </div>
+
+    <!-- Danh Sách Võ Sinh (Mobile Card View & Desktop Table View) -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+        <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Danh Sách Thí Sinh</span>
+        <span class="text-xs font-semibold text-slate-600" id="resultCount">Hiển thị: 0 võ sinh</span>
+      </div>
+
+      <!-- Giao diện Mobile Card View -->
+      <div id="mobileCandidateList" class="block md:hidden divide-y divide-slate-200">
+        <div class="text-center py-8 text-slate-400">
+          <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i>
+          <p class="text-xs">Đang tải dữ liệu thi lên đai...</p>
+        </div>
+      </div>
+
+      <!-- Giao diện Desktop Table View -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs md:text-sm">
+          <thead>
+            <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+              <th class="py-3 px-3 text-center w-16">SBD</th>
+              <th class="py-3 px-4">Họ và Tên</th>
+              <th class="py-3 px-3 text-center">Giới Tính</th>
+              <th class="py-3 px-3 text-center">Năm Sinh</th>
+              <th class="py-3 px-3">VTF ID</th>
+              <th class="py-3 px-3 text-center">Đẳng dự thi</th>
+              <th class="py-3 px-3 text-center">Sân thi</th>
+              <th class="py-3 px-3 text-center">Trạng thái</th>
+              <th class="py-3 px-3">Thời gian</th>
+              <th class="py-3 px-4 text-center min-w-[130px]">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="desktopCandidateTableBody" class="divide-y divide-slate-200">
+            <tr>
+              <td colspan="10" class="text-center py-8 text-slate-400">
+                <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i>
+                <p>Đang tải dữ liệu thi lên đai...</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL ADMIN CMS: Dành riêng cho minhnguyen.ymc@gmail.com -->
+  <div id="configModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg p-5 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-shield-halved text-red-600"></i> CMS Đổi Nguồn File (Dành Cho Quản Trị Viên)
+        </h3>
+        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs md:text-sm">
+        <p class="text-slate-600">
+          Chỉ tài khoản Quản trị viên <strong class="text-slate-900 font-bold">minhnguyen.ymc@gmail.com</strong> mới được phép đổi nguồn file cho các kỳ thi tiếp theo:
+        </p>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Link hoặc ID Google Sheet mới:</label>
+          <input type="text" id="newSheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." 
+                 class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-red-500">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Tên Sheet trang danh sách (mặc định: DanhSachThi):</label>
+          <input type="text" id="newSheetNameInput" value="DanhSachThi" placeholder="DanhSachThi" 
+                 class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500">
+        </div>
+
+        <div id="modalStatusMsg" class="hidden p-3 rounded-lg text-xs font-semibold"></div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+        <button onclick="closeConfigModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs transition">
+          Hủy
+        </button>
+        <button onclick="saveNewSource()" id="btnSaveSource" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center gap-1.5">
+          <i class="fa-solid fa-floppy-disk"></i> Lưu & Chuyển Nguồn
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allCandidates = [];
+    let isStatsOpen = false;
+
+    function removeAccents(str) {
+      if (!str) return '';
+      return str.normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd').replace(/Đ/g, 'D')
+        .toLowerCase();
+    }
+
+    window.onload = function() {
+      loadData();
+    };
+
+    function toggleStats() {
+      isStatsOpen = !isStatsOpen;
+      document.getElementById('statsPanel').classList.toggle('hidden', !isStatsOpen);
+      document.getElementById('statsChevron').style.transform = isStatsOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+      document.getElementById('statsToggleLabel').innerText = isStatsOpen ? 'Thu gọn' : 'Mở bộ lọc & Thống kê';
+    }
+
+    function openConfigModal() {
+      document.getElementById('configModal').classList.remove('hidden');
+      document.getElementById('modalStatusMsg').classList.add('hidden');
+    }
+
+    function closeConfigModal() {
+      document.getElementById('configModal').classList.add('hidden');
+    }
+
+    function saveNewSource() {
+      const url = document.getElementById('newSheetUrlInput').value.trim();
+      const sheetName = document.getElementById('newSheetNameInput').value.trim();
+      const btn = document.getElementById('btnSaveSource');
+      const msg = document.getElementById('modalStatusMsg');
+
+      if (!url) {
+        msg.className = 'p-3 rounded-lg text-xs font-semibold bg-red-100 text-red-800';
+        msg.innerText = 'Vui lòng nhập Link Google Sheet mới!';
+        msg.classList.remove('hidden');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xác thực...';
+
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu & Chuyển Nguồn';
+          if (res.success) {
+            msg.className = 'p-3 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-800';
+            msg.innerText = res.message;
+            msg.classList.remove('hidden');
+            setTimeout(() => {
+              closeConfigModal();
+              loadData();
+            }, 1200);
+          } else {
+            msg.className = 'p-3 rounded-lg text-xs font-semibold bg-red-100 text-red-800';
+            msg.innerText = res.message;
+            msg.classList.remove('hidden');
+          }
+        })
+        .withFailureHandler(err => {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu & Chuyển Nguồn';
+          msg.className = 'p-3 rounded-lg text-xs font-semibold bg-red-100 text-red-800';
+          msg.innerText = 'Lỗi: ' + (err.message || err);
+          msg.classList.remove('hidden');
+        })
+        .updateSpreadsheetSource(url, sheetName);
+    }
+
+    function loadData() {
+      const reloadIcon = document.getElementById('reloadIcon');
+      reloadIcon.classList.add('fa-spin');
+
+      google.script.run
+        .withSuccessHandler(onDataLoaded)
+        .withFailureHandler(onError)
+        .getInitialData();
+    }
+
+    function onDataLoaded(data) {
+      document.getElementById('reloadIcon').classList.remove('fa-spin');
+      allCandidates = data.candidates;
+
+      // Phân quyền hiển thị Nút Admin CMS: CHỈ MỞ KHI LÀ MINHNGUYEN.YMC@GMAIL.COM
+      const cmsBtn = document.getElementById('btnCmsAdmin');
+      if (data.isAdmin) {
+        cmsBtn.classList.remove('hidden');
+      } else {
+        cmsBtn.classList.add('hidden');
+      }
+
+      if (data.currentSheetInfo) {
+        document.getElementById('sourceTitle').innerText = data.currentSheetInfo.title + ' (' + data.currentSheetInfo.sheetName + ')';
+        document.getElementById('newSheetUrlInput').value = data.currentSheetInfo.url || data.currentSheetInfo.ssId;
+      }
+
+      const capSelect = document.getElementById('filterCap');
+      capSelect.innerHTML = '<option value="ALL">Tất cả cấp/đẳng</option>';
+      data.capList.forEach(cap => {
+        if(cap) capSelect.innerHTML += `<option value="${cap}">${cap}</option>`;
+      });
+
+      const sanSelect = document.getElementById('filterSan');
+      sanSelect.innerHTML = '<option value="ALL">Tất cả sân thi</option>';
+      data.sanList.forEach(san => {
+        if(san) sanSelect.innerHTML += `<option value="${san}">${san}</option>`;
+      });
+
+      updateStats(data.stats);
+      applyFilters();
+    }
+
+    function updateStats(stats) {
+      document.getElementById('statTotal').innerText = stats.total;
+      document.getElementById('statCheckedIn').innerText = stats.checkedIn;
+      document.getElementById('statPending').innerText = stats.pending;
+      
+      const pct = stats.total > 0 ? Math.round((stats.checkedIn / stats.total) * 100) : 0;
+      document.getElementById('statProgress').innerText = pct + '%';
+
+      document.getElementById('statSummaryText').innerText = `Đã check-in ${stats.checkedIn}/${stats.total} - ${pct}%`;
+    }
+
+    function applyFilters() {
+      const rawQuery = document.getElementById('searchInput').value.trim();
+      const query = removeAccents(rawQuery);
+
+      const statusFilter = document.getElementById('filterStatus').value;
+      const capFilter = document.getElementById('filterCap').value;
+      const sanFilter = document.getElementById('filterSan').value;
+
+      document.getElementById('btnClearSearch').classList.toggle('hidden', rawQuery === '');
+
+      const filtered = allCandidates.filter(c => {
+        const nameAccents = removeAccents(c.hoTen);
+        const sbdAccents = removeAccents(c.sbd);
+        const vtfAccents = removeAccents(c.vtfId);
+
+        const matchSearch = query === '' || 
+          sbdAccents.includes(query) || 
+          nameAccents.includes(query) || 
+          vtfAccents.includes(query);
+
+        let matchStatus = true;
+        if (statusFilter === 'CHECKED_IN') matchStatus = c.trangThai === 'Đã check-in';
+        if (statusFilter === 'PENDING') matchStatus = c.trangThai === 'Chưa check-in';
+
+        const matchCap = capFilter === 'ALL' || c.dangDuThi === capFilter;
+        const matchSan = sanFilter === 'ALL' || c.sanThi === sanFilter;
+
+        return matchSearch && matchStatus && matchCap && matchSan;
+      });
+
+      renderCandidates(filtered);
+    }
+
+    function renderCandidates(list) {
+      document.getElementById('resultCount').innerText = `Hiển thị: ${list.length} võ sinh`;
+
+      const mobileContainer = document.getElementById('mobileCandidateList');
+      const desktopTbody = document.getElementById('desktopCandidateTableBody');
+
+      if (list.length === 0) {
+        const emptyHtml = `
+          <div class="text-center py-8 text-slate-400">
+            <i class="fa-solid fa-user-slash text-2xl mb-2"></i>
+            <p class="text-xs">Không tìm thấy võ sinh phù hợp</p>
+          </div>`;
+        mobileContainer.innerHTML = emptyHtml;
+        desktopTbody.innerHTML = `
+          <tr>
+            <td colspan="10" class="text-center py-8 text-slate-400">
+              <i class="fa-solid fa-user-slash text-2xl mb-2"></i>
+              <p>Không tìm thấy võ sinh phù hợp</p>
+            </td>
+          </tr>`;
+        return;
+      }
+
+      // Render Mobile Card View
+      mobileContainer.innerHTML = list.map(c => {
+        const isDone = c.trangThai === 'Đã check-in';
+        const badge = isDone 
+          ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800"><i class="fa-solid fa-check text-[10px] mr-1"></i> Đã check-in</span>`
+          : `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800"><i class="fa-regular fa-clock text-[10px] mr-1"></i> Chưa check-in</span>`;
+
+        const actionBtn = isDone
+          ? `<span class="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold rounded-lg text-xs w-full text-center">
+               <i class="fa-solid fa-circle-check"></i> Hoàn tất
+             </span>`
+          : `<button onclick="handleCheckIn(${c.rowIndex}, this)" class="w-full px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg shadow-sm transition text-xs inline-flex items-center justify-center gap-1.5 touch-manipulation">
+               <i class="fa-solid fa-qrcode"></i> Check-in
+             </button>`;
+
+        return `
+          <div class="p-3.5 space-y-2 hover:bg-slate-50/80 transition">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="font-extrabold text-slate-900 text-sm md:text-base">
+                  ${c.hoTen} <span class="font-semibold text-slate-500 text-xs">(${c.gioiTinh || 'N/A'})</span>
+                </div>
+                <div class="text-xs font-bold text-amber-600 mt-0.5">
+                  SBD: <span class="text-slate-900 font-extrabold">${c.sbd || '-'}</span> 
+                  <span class="text-slate-300 mx-1">|</span> 
+                  NS: <span class="text-slate-900 font-bold">${c.namSinh || '-'}</span>
+                </div>
+                <div class="text-xs font-semibold text-sky-600 mt-0.5">
+                  Sân: <span class="font-bold text-slate-900">${c.sanThi || 'Chưa xếp'}</span> 
+                  <span class="text-slate-300 mx-1">|</span> 
+                  GK: <span class="font-bold text-slate-800">${c.giamKhao || 'Chưa xếp'}</span>
+                </div>
+                <div class="text-[11px] font-medium text-slate-500 mt-0.5">
+                  Đẳng: <span class="font-semibold text-slate-800">${c.dangDuThi || '-'}</span>
+                  ${c.vtfId ? `<span class="text-slate-300 mx-1">|</span> VTF: <span class="font-mono text-slate-600">${c.vtfId}</span>` : ''}
+                </div>
+                ${isDone ? `<div class="text-[11px] text-emerald-600 font-mono mt-1"><i class="fa-regular fa-clock mr-1"></i>${c.thoiGianCheckin}</div>` : ''}
+              </div>
+
+              <div class="flex flex-col items-end gap-2 shrink-0 min-w-[110px]">
+                ${badge}
+                <div class="w-full mt-1">${actionBtn}</div>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+
+      // Render Desktop Table View
+      desktopTbody.innerHTML = list.map(c => {
+        const isDone = c.trangThai === 'Đã check-in';
+        const badge = isDone 
+          ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800"><i class="fa-solid fa-check text-xs mr-1"></i> Đã check-in</span>`
+          : `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800"><i class="fa-regular fa-clock text-xs mr-1"></i> Chưa check-in</span>`;
+
+        const actionBtn = isDone
+          ? `<span class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold rounded-lg text-xs">
+               <i class="fa-solid fa-circle-check"></i> Hoàn tất
+             </span>`
+          : `<button onclick="handleCheckIn(${c.rowIndex}, this)" class="px-4 py-1.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg shadow-sm transition text-xs inline-flex items-center justify-center gap-1.5 touch-manipulation">
+               <i class="fa-solid fa-qrcode"></i> Check-in
+             </button>`;
+
+        return `
+          <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            <td class="py-3 px-3 text-center font-bold text-slate-900">${c.sbd || '-'}</td>
+            <td class="py-3 px-4 font-bold text-slate-900">${c.hoTen}</td>
+            <td class="py-3 px-3 text-center text-slate-600">${c.gioiTinh || '-'}</td>
+            <td class="py-3 px-3 text-center text-slate-600">${c.namSinh || '-'}</td>
+            <td class="py-3 px-3 font-mono text-xs text-slate-600">${c.vtfId || '-'}</td>
+            <td class="py-3 px-3 text-center font-medium text-slate-700">${c.dangDuThi || '-'}</td>
+            <td class="py-3 px-3 text-center text-slate-600">${c.sanThi || '-'}</td>
+            <td class="py-3 px-3 text-center">${badge}</td>
+            <td class="py-3 px-3 text-xs text-slate-500 font-mono">${c.thoiGianCheckin || '-'}</td>
+            <td class="py-3 px-4 text-center min-w-[130px]">${actionBtn}</td>
+          </tr>`;
+      }).join('');
+    }
+
+    function handleCheckIn(rowIndex, btnElement) {
+      if (btnElement) {
+        btnElement.disabled = true;
+        btnElement.classList.add('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+        const icon = btnElement.querySelector('i');
+        if (icon) {
+          icon.className = 'fa-solid fa-spinner fa-spin';
+        }
+      }
+
+      google.script.run
+        .withSuccessHandler(res => {
+          if (res.success) {
+            const item = allCandidates.find(c => c.rowIndex === rowIndex);
+            if (item) {
+              item.trangThai = res.status;
+              item.thoiGianCheckin = res.time;
+            }
+            recalcStats();
+            applyFilters();
+            showToast(res.message + (item ? `: ${item.hoTen} (SBD ${item.sbd})` : ''), 'success');
+          } else {
+            if (btnElement) {
+              btnElement.disabled = false;
+              btnElement.classList.remove('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+              const icon = btnElement.querySelector('i');
+              if (icon) icon.className = 'fa-solid fa-qrcode';
+            }
+            showToast(res.message, 'error');
+          }
+        })
+        .withFailureHandler(err => {
+          if (btnElement) {
+            btnElement.disabled = false;
+            btnElement.classList.remove('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+            const icon = btnElement.querySelector('i');
+            if (icon) icon.className = 'fa-solid fa-qrcode';
+          }
+          onError(err);
+        })
+        .checkInCandidate(rowIndex, 'checkin');
+    }
+
+    function recalcStats() {
+      const total = allCandidates.length;
+      const checkedIn = allCandidates.filter(c => c.trangThai === 'Đã check-in').length;
+      updateStats({ total, checkedIn, pending: total - checkedIn });
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      applyFilters();
+    }
+
+    function showToast(msg, type) {
+      const alert = document.getElementById('toastAlert');
+      const text = document.getElementById('toastMessage');
+      text.innerText = msg;
+
+      alert.className = 'p-4 rounded-xl shadow-md text-sm font-medium flex items-center justify-between transition-all ' +
+        (type === 'success' ? 'bg-emerald-600 text-white' : type === 'error' ? 'bg-red-600 text-white' : 'bg-slate-800 text-white');
+      
+      alert.classList.remove('hidden');
+      setTimeout(() => hideToast(), 4000);
+    }
+
+    function hideToast() {
+      document.getElementById('toastAlert').classList.add('hidden');
+    }
+
+    function onError(err) {
+      document.getElementById('reloadIcon').classList.remove('fa-spin');
+      showToast('Lỗi: ' + (err.message || err), 'error');
+    }
+  </script>
+</body>
+</html>
