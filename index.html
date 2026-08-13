@@ -2,6 +2,11 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
+  <!-- BẮT BUỘC cho điện thoại. Thiếu thẻ này, trình duyệt dựng trang ở bề rộng
+       ~980px rồi thu nhỏ, khiến chữ và nút bé xíu. Cố ý KHÔNG chặn phóng to
+       (user-scalable=no) để người dùng vẫn zoom được khi cần. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
   <title>Lễ Tân Check-in - Taekwondo Kids</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -16,26 +21,28 @@
 
   <!-- Header Section -->
   <header class="glass-header text-white sticky top-0 z-30 shadow-md border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-      <div class="flex items-center space-x-3">
+    <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
         <!-- Logo Trung Tâm Taekwondo KIDS -->
-        <div class="bg-white p-1 rounded-xl shadow-md border border-slate-200 flex items-center justify-center h-11 w-auto shrink-0">
-          <img src="logo.png" alt="Taekwondo KIDS Logo" class="h-9 w-auto object-contain" onerror="this.src='https://drive.google.com/thumbnail?id=1RW5aRHcgSFkAE8qzZlhSoDGKtWxBFGMs&sz=w500'">
+        <div class="bg-white p-1 rounded-lg shadow-md border border-slate-200 flex items-center justify-center h-9 sm:h-11 w-auto shrink-0">
+          <img src="logo.png" alt="Taekwondo KIDS Logo" class="h-7 sm:h-9 w-auto object-contain" onerror="this.src='https://drive.google.com/thumbnail?id=1RW5aRHcgSFkAE8qzZlhSoDGKtWxBFGMs&sz=w500'">
         </div>
-        <div>
-          <h1 class="text-base md:text-xl font-bold tracking-tight text-white leading-tight">LỄ TÂN CHECK-IN VÕ SINH</h1>
-          <p class="text-xs text-slate-400">
+        <div class="min-w-0">
+          <h1 class="text-sm sm:text-base md:text-xl font-bold tracking-tight text-white leading-tight truncate">LỄ TÂN CHECK-IN</h1>
+          <p class="text-[11px] sm:text-xs text-slate-400 truncate">
             Nguồn: <span id="sourceTitle" class="font-bold text-slate-200">Đang tải...</span>
           </p>
         </div>
       </div>
-      <div class="flex items-center space-x-2">
-        <!-- Nút Cài Đặt Danh Sách (Header) -->
-        <button onclick="openConfigModal()" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-amber-400 text-xs font-semibold py-2.5 px-3.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 whitespace-nowrap shadow-sm">
-          <i class="fa-solid fa-gear"></i> Cài đặt danh sách
+      <!-- Trên điện thoại chỉ hiện biểu tượng; từ sm trở lên mới hiện chữ -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button onclick="openConfigModal()" aria-label="Cài đặt danh sách"
+                class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-amber-400 text-xs font-semibold h-11 min-w-[44px] px-3 sm:px-3.5 rounded-lg border border-slate-700 transition inline-flex items-center justify-center gap-1.5 whitespace-nowrap shadow-sm">
+          <i class="fa-solid fa-gear text-base sm:text-sm"></i><span class="hidden sm:inline">Cài đặt danh sách</span>
         </button>
-        <button onclick="loadData()" id="btnReload" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-200 text-xs font-semibold py-2.5 px-3.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 whitespace-nowrap shadow-sm">
-          <i class="fa-solid fa-rotate-right" id="reloadIcon"></i> Làm mới
+        <button onclick="loadData()" id="btnReload" aria-label="Làm mới"
+                class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-200 text-xs font-semibold h-11 min-w-[44px] px-3 sm:px-3.5 rounded-lg border border-slate-700 transition inline-flex items-center justify-center gap-1.5 whitespace-nowrap shadow-sm">
+          <i class="fa-solid fa-rotate-right text-base sm:text-sm" id="reloadIcon"></i><span class="hidden sm:inline">Làm mới</span>
         </button>
       </div>
     </div>
@@ -51,7 +58,7 @@
       <div class="relative">
         <i class="fa-solid fa-bolt absolute left-3.5 top-3.5 sm:top-4 text-amber-500 text-base sm:text-lg"></i>
         <input type="text" id="searchInput" oninput="onSearchInput()"
-               placeholder="Tìm kiếm theo Họ tên Võ sinh hoặc Mã VTF" 
+               placeholder="Gõ SBD (vd: 1001), Họ Tên (không dấu/có dấu), Mã VTF ID..." 
                class="w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-3 sm:py-3.5 bg-white border-2 border-red-400 rounded-xl text-base font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-4 focus:ring-red-200 focus:border-red-600 shadow-sm transition">
         <button id="btnClearSearch" onclick="clearSearch()" class="hidden absolute right-3.5 top-3 sm:top-3.5 text-slate-400 hover:text-slate-600 p-1">
           <i class="fa-solid fa-circle-xmark text-lg sm:text-xl"></i>
@@ -61,16 +68,16 @@
 
     <!-- Cụm Thống Kê Tiến Độ & Bộ Lọc Tùy Chọn -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <button onclick="toggleStats()" class="flex items-center justify-between w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 transition text-left">
-        <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-          <i class="fa-solid fa-sliders text-red-600"></i> BỘ LỌC & THỐNG KÊ TIẾN ĐỘ 
-          <span class="text-slate-500 font-normal">
-            (<span id="statSummaryText">Đã check-in 0/0 - 0%</span>)
+      <button onclick="toggleStats()" class="flex items-center justify-between gap-2 w-full min-h-[52px] px-4 py-3 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 transition text-left">
+        <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex flex-col sm:flex-row sm:items-center sm:gap-2 min-w-0">
+          <span class="flex items-center gap-2"><i class="fa-solid fa-sliders text-red-600"></i> Bộ lọc &amp; Thống kê</span>
+          <span class="text-slate-500 font-normal normal-case tracking-normal truncate">
+            <span id="statSummaryText">Đã check-in 0/0 - 0%</span>
           </span>
         </span>
-        <span class="text-xs font-semibold text-red-600 flex items-center gap-1">
-          <span id="statsToggleLabel">Mở bộ lọc & Thống kê</span>
-          <i class="fa-solid fa-chevron-down transition-transform duration-200" id="statsChevron"></i>
+        <span class="text-xs font-semibold text-red-600 flex items-center gap-1 shrink-0">
+          <span id="statsToggleLabel" class="hidden sm:inline">Mở bộ lọc &amp; Thống kê</span>
+          <i class="fa-solid fa-chevron-down transition-transform duration-200 text-base" id="statsChevron"></i>
         </span>
       </button>
 
@@ -97,7 +104,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-200">
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">Trạng thái Check-in</label>
-            <select id="filterStatus" onchange="applyFilters()" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm">
+            <select id="filterStatus" onchange="applyFilters()" class="w-full h-11 bg-white border border-slate-300 rounded-xl px-3 text-base sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm">
               <option value="ALL" selected>Tất cả trạng thái</option>
               <option value="PENDING">Chưa Check-in</option>
               <option value="CHECKED_IN">Đã Check-in</option>
@@ -105,24 +112,24 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">Đẳng dự thi</label>
-            <select id="filterCap" onchange="applyFilters()" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm">
+            <select id="filterCap" onchange="applyFilters()" class="w-full h-11 bg-white border border-slate-300 rounded-xl px-3 text-base sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm">
               <option value="ALL">Tất cả cấp/đẳng</option>
             </select>
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">Sân thi</label>
-            <select id="filterSan" onchange="applyFilters()" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm">
+            <select id="filterSan" onchange="applyFilters()" class="w-full h-11 bg-white border border-slate-300 rounded-xl px-3 text-base sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm">
               <option value="ALL">Tất cả sân thi</option>
             </select>
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 pt-1">
-          <button onclick="showAllList()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg text-xs transition flex items-center gap-1.5">
+        <div class="grid grid-cols-1 sm:flex sm:flex-wrap items-stretch gap-2 pt-1">
+          <button onclick="showAllList()" class="h-11 px-4 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-white font-bold rounded-xl text-sm transition flex items-center justify-center gap-2">
             <i class="fa-solid fa-list-ul"></i> Xem toàn bộ danh sách
           </button>
-          <button onclick="resetFilters()" class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-semibold rounded-lg text-xs transition flex items-center gap-1.5">
-            <i class="fa-solid fa-rotate-left"></i> Bỏ lọc & ẩn danh sách
+          <button onclick="resetFilters()" class="h-11 px-4 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 border border-slate-300 font-semibold rounded-xl text-sm transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-rotate-left"></i> Bỏ lọc &amp; ẩn danh sách
           </button>
         </div>
       </div>
@@ -178,24 +185,25 @@
       </div>
 
       <!-- Thanh phân trang -->
-      <div id="paginationBar" class="hidden px-4 py-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <span class="text-xs font-medium text-slate-600" id="paginationInfo"></span>
-        <div class="flex items-center gap-1">
-          <button id="pageFirst" onclick="gotoPage(1)" title="Trang đầu"
-                  class="px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
+      <div id="paginationBar" class="hidden px-3 sm:px-4 py-3 bg-slate-50 border-t border-slate-200 flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
+        <span class="text-xs font-medium text-slate-600 text-center" id="paginationInfo"></span>
+        <!-- Mọi nút cao 44px: đủ lớn để bấm bằng ngón tay -->
+        <div class="flex items-center justify-center gap-1.5 w-full sm:w-auto">
+          <button id="pageFirst" onclick="gotoPage(1)" aria-label="Trang đầu"
+                  class="h-11 w-11 shrink-0 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 active:bg-slate-200 disabled:opacity-40 transition">
             <i class="fa-solid fa-angles-left"></i>
           </button>
-          <button id="pagePrev" onclick="gotoPage(currentPage - 1)"
-                  class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
-            <i class="fa-solid fa-chevron-left"></i> Trước
+          <button id="pagePrev" onclick="gotoPage(currentPage - 1)" aria-label="Trang trước"
+                  class="h-11 flex-1 sm:flex-none sm:px-4 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 active:bg-slate-200 disabled:opacity-40 transition">
+            <i class="fa-solid fa-chevron-left"></i><span class="hidden sm:inline ml-1.5">Trước</span>
           </button>
-          <span id="pageIndicator" class="px-3 py-1.5 text-xs font-bold text-slate-700 whitespace-nowrap"></span>
-          <button id="pageNext" onclick="gotoPage(currentPage + 1)"
-                  class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
-            Sau <i class="fa-solid fa-chevron-right"></i>
+          <span id="pageIndicator" class="px-2 text-sm font-bold text-slate-700 whitespace-nowrap tabular-nums"></span>
+          <button id="pageNext" onclick="gotoPage(currentPage + 1)" aria-label="Trang sau"
+                  class="h-11 flex-1 sm:flex-none sm:px-4 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 active:bg-slate-200 disabled:opacity-40 transition">
+            <span class="hidden sm:inline mr-1.5">Sau</span><i class="fa-solid fa-chevron-right"></i>
           </button>
-          <button id="pageLast" onclick="gotoPage(totalPages())" title="Trang cuối"
-                  class="px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
+          <button id="pageLast" onclick="gotoPage(totalPages())" aria-label="Trang cuối"
+                  class="h-11 w-11 shrink-0 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 active:bg-slate-200 disabled:opacity-40 transition">
             <i class="fa-solid fa-angles-right"></i>
           </button>
         </div>
@@ -223,7 +231,7 @@
             <i class="fa-solid fa-link text-amber-600 mr-1"></i> Web App API URL (Google Apps Script):
           </label>
           <input type="text" id="webAppUrlInput" placeholder="https://script.google.com/macros/s/.../exec" 
-                 class="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-amber-500">
+                 class="w-full h-11 px-3 bg-white border border-amber-300 rounded-xl text-base sm:text-xs font-mono focus:outline-none focus:ring-2 focus:ring-amber-500">
           <p class="text-[11px] text-amber-700">Dán Web App URL (đã Deploy từ Google Apps Script) để kết nối dữ liệu khi chạy trên GitHub Pages.</p>
         </div>
 
@@ -235,7 +243,7 @@
           <div class="flex gap-2">
             <input type="password" id="adminPinInput" placeholder="Nhập mã để đổi nguồn danh sách"
                    onkeydown="if(event.key==='Enter') unlockAdmin()"
-                   class="flex-1 px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-500">
+                   class="flex-1 min-w-0 h-11 px-3 bg-white border border-slate-300 rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
             <button onclick="unlockAdmin()" id="btnUnlockAdmin"
                     class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg text-xs whitespace-nowrap transition">
               Mở khoá
@@ -248,13 +256,13 @@
           <div>
             <label class="block font-bold text-slate-700 mb-1">Link hoặc ID Google Sheet mới:</label>
             <input type="text" id="newSheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." 
-                   class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-red-500">
+                   class="w-full h-11 px-3 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-xs font-mono focus:outline-none focus:ring-2 focus:ring-red-500">
           </div>
 
           <div>
             <label class="block font-bold text-slate-700 mb-1">Tên Trang Sheet (mặc định: DanhSachThi):</label>
             <input type="text" id="newSheetNameInput" value="DanhSachThi" placeholder="DanhSachThi" 
-                   class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-500">
+                   class="w-full h-11 px-3 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500">
           </div>
         </div>
 
@@ -727,47 +735,48 @@
       // Render Mobile Card View
       mobileContainer.innerHTML = list.map(c => {
         const isDone = c.trangThai === 'Đã check-in';
-        const badge = isDone 
-          ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800"><i class="fa-solid fa-check text-[10px] mr-1"></i> Đã check-in</span>`
-          : `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800"><i class="fa-regular fa-clock text-[10px] mr-1"></i> Chưa check-in</span>`;
+        const badge = isDone
+          ? `<span class="inline-flex items-center shrink-0 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800"><i class="fa-solid fa-check mr-1"></i> Đã check-in</span>`
+          : `<span class="inline-flex items-center shrink-0 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800"><i class="fa-regular fa-clock mr-1"></i> Chưa check-in</span>`;
 
+        // Nút cao 48px, rộng hết thẻ -> dễ bấm bằng ngón tay cái.
         const actionBtn = isDone
-          ? `<span class="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold rounded-lg text-xs w-full text-center">
-               <i class="fa-solid fa-circle-check"></i> Hoàn tất
+          ? `<span class="flex items-center justify-center gap-1.5 h-12 bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold rounded-xl text-sm w-full">
+               <i class="fa-solid fa-circle-check"></i> Đã hoàn tất
              </span>`
-          : `<button onclick="handleCheckIn(${c.rowIndex}, this)" class="w-full px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg shadow-sm transition text-xs inline-flex items-center justify-center gap-1.5 touch-manipulation">
-               <i class="fa-solid fa-qrcode"></i> Check-in
+          : `<button onclick="handleCheckIn(${c.rowIndex}, this)" class="w-full h-12 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-xl shadow-sm transition text-sm flex items-center justify-center gap-2 touch-manipulation">
+               <i class="fa-solid fa-qrcode text-base"></i> Check-in
              </button>`;
 
         return `
-          <div class="p-3.5 space-y-2 hover:bg-slate-50/80 transition">
-            <div class="flex items-start justify-between gap-2">
-              <div>
-                <div class="font-extrabold text-slate-900 text-sm md:text-base">
-                  ${c.hoTen} <span class="font-semibold text-slate-500 text-xs">(${c.gioiTinh || 'N/A'})</span>
-                </div>
-                <div class="text-xs font-bold text-amber-600 mt-0.5">
-                  SBD: <span class="text-slate-900 font-extrabold">${c.sbd || '-'}</span> 
-                  <span class="text-slate-300 mx-1">|</span> 
-                  NS: <span class="text-slate-900 font-bold">${c.namSinh || '-'}</span>
-                </div>
-                <div class="text-xs font-semibold text-sky-600 mt-0.5">
-                  Sân: <span class="font-bold text-slate-900">${c.sanThi || 'Chưa xếp'}</span> 
-                  <span class="text-slate-300 mx-1">|</span> 
-                  GK: <span class="font-bold text-slate-800">${c.giamKhao || 'Chưa xếp'}</span>
-                </div>
-                <div class="text-[11px] font-medium text-slate-500 mt-0.5">
-                  Đẳng: <span class="font-semibold text-slate-800">${c.dangDuThi || '-'}</span>
-                  ${c.vtfId ? `<span class="text-slate-300 mx-1">|</span> VTF: <span class="font-mono text-slate-600">${c.vtfId}</span>` : ''}
-                </div>
-                ${isDone ? `<div class="text-[11px] text-emerald-600 font-mono mt-1"><i class="fa-regular fa-clock mr-1"></i>${c.thoiGianCheckin}</div>` : ''}
+          <div class="p-4 space-y-3 ${isDone ? 'bg-emerald-50/40' : ''}">
+            <!-- Hàng 1: SBD nổi bật + trạng thái -->
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex items-baseline gap-2 min-w-0">
+                <span class="text-[11px] font-bold text-slate-500 uppercase shrink-0">SBD</span>
+                <span class="text-2xl font-extrabold text-slate-900 leading-none tabular-nums">${c.sbd || '-'}</span>
               </div>
-
-              <div class="flex flex-col items-end gap-2 shrink-0 min-w-[110px]">
-                ${badge}
-                <div class="w-full mt-1">${actionBtn}</div>
-              </div>
+              ${badge}
             </div>
+
+            <!-- Hàng 2: Họ tên -->
+            <div class="text-lg font-extrabold text-slate-900 leading-snug break-words">
+              ${c.hoTen}
+            </div>
+
+            <!-- Hàng 3: Thông tin phụ, mỗi ô một nhãn rõ ràng -->
+            <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+              <div><span class="block text-[11px] font-semibold text-slate-400 uppercase">Giới tính</span><span class="font-bold text-slate-800">${c.gioiTinh || '-'}</span></div>
+              <div><span class="block text-[11px] font-semibold text-slate-400 uppercase">Năm sinh</span><span class="font-bold text-slate-800">${c.namSinh || '-'}</span></div>
+              <div><span class="block text-[11px] font-semibold text-slate-400 uppercase">Đẳng dự thi</span><span class="font-bold text-slate-800">${c.dangDuThi || '-'}</span></div>
+              <div><span class="block text-[11px] font-semibold text-slate-400 uppercase">Sân thi</span><span class="font-bold text-slate-800">${c.sanThi || 'Chưa xếp'}</span></div>
+              ${c.vtfId ? `<div class="col-span-2"><span class="block text-[11px] font-semibold text-slate-400 uppercase">VTF ID</span><span class="font-mono font-semibold text-slate-700 break-all">${c.vtfId}</span></div>` : ''}
+            </div>
+
+            ${isDone ? `<div class="text-xs text-emerald-700 font-semibold bg-emerald-100 rounded-lg px-3 py-2 flex items-center gap-1.5"><i class="fa-regular fa-clock"></i>${c.thoiGianCheckin}</div>` : ''}
+
+            <!-- Hàng 4: Nút hành động chiếm trọn bề ngang -->
+            ${actionBtn}
           </div>`;
       }).join('');
 
