@@ -50,8 +50,8 @@
       </label>
       <div class="relative">
         <i class="fa-solid fa-bolt absolute left-3.5 top-3.5 sm:top-4 text-amber-500 text-base sm:text-lg"></i>
-        <input type="text" id="searchInput" oninput="applyFilters()" 
-               placeholder="Nhập Họ Tên võ sinh hoặc Mã VTF" 
+        <input type="text" id="searchInput" oninput="onSearchInput()"
+               placeholder="Gõ SBD (vd: 1001), Họ Tên (không dấu/có dấu), Mã VTF ID..." 
                class="w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-3 sm:py-3.5 bg-white border-2 border-red-400 rounded-xl text-base font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-4 focus:ring-red-200 focus:border-red-600 shadow-sm transition">
         <button id="btnClearSearch" onclick="clearSearch()" class="hidden absolute right-3.5 top-3 sm:top-3.5 text-slate-400 hover:text-slate-600 p-1">
           <i class="fa-solid fa-circle-xmark text-lg sm:text-xl"></i>
@@ -116,6 +116,15 @@
             </select>
           </div>
         </div>
+
+        <div class="flex flex-wrap items-center gap-2 pt-1">
+          <button onclick="showAllList()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg text-xs transition flex items-center gap-1.5">
+            <i class="fa-solid fa-list-ul"></i> Xem toàn bộ danh sách
+          </button>
+          <button onclick="resetFilters()" class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-semibold rounded-lg text-xs transition flex items-center gap-1.5">
+            <i class="fa-solid fa-rotate-left"></i> Bỏ lọc & ẩn danh sách
+          </button>
+        </div>
       </div>
     </div>
 
@@ -126,7 +135,7 @@
     </div>
 
     <!-- Danh Sách Võ Sinh -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div id="candidateCard" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
         <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Danh Sách Thí Sinh</span>
         <span class="text-xs font-semibold text-slate-600" id="resultCount">Hiển thị: 0 võ sinh</span>
@@ -166,6 +175,30 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Thanh phân trang -->
+      <div id="paginationBar" class="hidden px-4 py-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <span class="text-xs font-medium text-slate-600" id="paginationInfo"></span>
+        <div class="flex items-center gap-1">
+          <button id="pageFirst" onclick="gotoPage(1)" title="Trang đầu"
+                  class="px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            <i class="fa-solid fa-angles-left"></i>
+          </button>
+          <button id="pagePrev" onclick="gotoPage(currentPage - 1)"
+                  class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            <i class="fa-solid fa-chevron-left"></i> Trước
+          </button>
+          <span id="pageIndicator" class="px-3 py-1.5 text-xs font-bold text-slate-700 whitespace-nowrap"></span>
+          <button id="pageNext" onclick="gotoPage(currentPage + 1)"
+                  class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            Sau <i class="fa-solid fa-chevron-right"></i>
+          </button>
+          <button id="pageLast" onclick="gotoPage(totalPages())" title="Trang cuối"
+                  class="px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            <i class="fa-solid fa-angles-right"></i>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -242,6 +275,12 @@
   <script>
     let allCandidates = [];
     let isStatsOpen = false;
+
+    const PAGE_SIZE = 20;          // Số võ sinh dựng ra mỗi trang
+    let filteredList = [];         // Kết quả sau khi lọc
+    let currentPage = 1;
+    let forceShowAll = false;      // Bật khi bấm "Xem toàn bộ danh sách"
+    let searchTimer = null;
     // === CẤU HÌNH CHO BẢN CHẠY TRÊN GITHUB PAGES ===
     // Dán Web App URL (dạng https://script.google.com/macros/s/<ID>/exec) vào đây
     // để lễ tân mở link là dùng được ngay, không phải tự nhập.
@@ -484,6 +523,13 @@
       currentIsAdmin = data.isAdmin === true;
       allCandidates = data.candidates || [];
 
+      // Bỏ dấu MỘT LẦN khi tải, thay vì tính lại cho từng võ sinh sau mỗi phím gõ.
+      allCandidates.forEach(c => {
+        c._name = removeAccents(c.hoTen);
+        c._sbd = removeAccents(c.sbd);
+        c._vtf = removeAccents(c.vtfId);
+      });
+
       if (data.currentSheetInfo) {
         document.getElementById('sourceTitle').innerText = data.currentSheetInfo.title + ' (' + data.currentSheetInfo.sheetName + ')';
         document.getElementById('newSheetUrlInput').value = data.currentSheetInfo.url || data.currentSheetInfo.ssId;
@@ -515,25 +561,75 @@
       document.getElementById('statSummaryText').innerText = `Đã check-in ${stats.checkedIn}/${stats.total} - ${pct}%`;
     }
 
-    function applyFilters() {
-      const rawQuery = document.getElementById('searchInput').value.trim();
-      const query = removeAccents(rawQuery);
+    /* ===== TÌM KIẾM, LỌC & PHÂN TRANG =====
+       Mặc định KHÔNG dựng danh sách. Chỉ dựng khi người dùng gõ tìm kiếm,
+       chọn một bộ lọc, hoặc bấm "Xem toàn bộ danh sách".
+       Mỗi lần chỉ dựng PAGE_SIZE dòng thay vì toàn bộ 600+ dòng. */
 
+    function onSearchInput() {
+      const raw = document.getElementById('searchInput').value.trim();
+      document.getElementById('btnClearSearch').classList.toggle('hidden', raw === '');
+      // Gộp các phím gõ liên tiếp, tránh dựng lại danh sách sau từng ký tự.
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(applyFilters, 180);
+    }
+
+    function hasActiveFilter() {
+      return document.getElementById('filterStatus').value !== 'ALL'
+          || document.getElementById('filterCap').value !== 'ALL'
+          || document.getElementById('filterSan').value !== 'ALL';
+    }
+
+    function shouldShowList() {
+      if (forceShowAll) return true;
+      if (document.getElementById('searchInput').value.trim() !== '') return true;
+      return hasActiveFilter();
+    }
+
+    function showAllList() {
+      forceShowAll = true;
+      applyFilters();
+    }
+
+    function resetFilters() {
+      forceShowAll = false;
+      document.getElementById('searchInput').value = '';
+      document.getElementById('filterStatus').value = 'ALL';
+      document.getElementById('filterCap').value = 'ALL';
+      document.getElementById('filterSan').value = 'ALL';
+      document.getElementById('btnClearSearch').classList.add('hidden');
+      applyFilters();
+    }
+
+    /** Lọc lại từ đầu và quay về trang 1. Dùng khi điều kiện lọc thay đổi. */
+    function applyFilters() {
+      currentPage = 1;
+      refreshList();
+    }
+
+    function totalPages() {
+      return Math.max(1, Math.ceil(filteredList.length / PAGE_SIZE));
+    }
+
+    function gotoPage(page) {
+      const max = totalPages();
+      currentPage = Math.min(Math.max(1, page), max);
+      renderCurrentPage();
+      document.getElementById('candidateCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /** Lọc lại nhưng GIỮ NGUYÊN trang đang xem (dùng sau khi check-in). */
+    function refreshList() {
+      const query = removeAccents(document.getElementById('searchInput').value.trim());
       const statusFilter = document.getElementById('filterStatus').value;
       const capFilter = document.getElementById('filterCap').value;
       const sanFilter = document.getElementById('filterSan').value;
 
-      document.getElementById('btnClearSearch').classList.toggle('hidden', rawQuery === '');
-
-      const filtered = allCandidates.filter(c => {
-        const nameAccents = removeAccents(c.hoTen);
-        const sbdAccents = removeAccents(c.sbd);
-        const vtfAccents = removeAccents(c.vtfId);
-
-        const matchSearch = query === '' || 
-          sbdAccents.includes(query) || 
-          nameAccents.includes(query) || 
-          vtfAccents.includes(query);
+      filteredList = allCandidates.filter(c => {
+        const matchSearch = query === ''
+          || (c._sbd && c._sbd.includes(query))
+          || (c._name && c._name.includes(query))
+          || (c._vtf && c._vtf.includes(query));
 
         let matchStatus = true;
         if (statusFilter === 'CHECKED_IN') matchStatus = c.trangThai === 'Đã check-in';
@@ -545,11 +641,68 @@
         return matchSearch && matchStatus && matchCap && matchSan;
       });
 
-      renderCandidates(filtered);
+      renderCurrentPage();
+    }
+
+    function renderCurrentPage() {
+      if (!shouldShowList()) {
+        renderIdleState();
+        return;
+      }
+
+      const max = totalPages();
+      if (currentPage > max) currentPage = max;
+
+      const start = (currentPage - 1) * PAGE_SIZE;
+      renderCandidates(filteredList.slice(start, start + PAGE_SIZE));
+      renderPagination(start);
+    }
+
+    /** Màn hình mặc định: chưa tìm, chưa lọc -> không dựng dòng nào. */
+    function renderIdleState() {
+      const total = allCandidates.length;
+      document.getElementById('resultCount').innerText =
+        total ? `Sẵn sàng tra cứu ${total} võ sinh` : 'Chưa có dữ liệu';
+      document.getElementById('paginationBar').classList.add('hidden');
+
+      const html = `
+        <div class="text-center py-10 px-4 text-slate-400">
+          <i class="fa-solid fa-magnifying-glass text-3xl mb-3 text-slate-300"></i>
+          <p class="text-sm font-semibold text-slate-500">Gõ SBD, họ tên hoặc mã VTF ID để tra cứu</p>
+          <p class="text-xs mt-1">Hoặc mở <span class="font-semibold text-slate-500">Bộ lọc &amp; Thống kê</span> để xem danh sách theo nhóm</p>
+        </div>`;
+      document.getElementById('mobileCandidateList').innerHTML = html;
+      document.getElementById('desktopCandidateTableBody').innerHTML =
+        `<tr><td colspan="10">${html}</td></tr>`;
+    }
+
+    function renderPagination(start) {
+      const bar = document.getElementById('paginationBar');
+      const totalItems = filteredList.length;
+
+      if (totalItems === 0) {
+        bar.classList.add('hidden');
+        return;
+      }
+
+      const max = totalPages();
+      bar.classList.toggle('hidden', max <= 1);
+
+      const from = start + 1;
+      const to = Math.min(start + PAGE_SIZE, totalItems);
+      document.getElementById('paginationInfo').innerText =
+        `Đang xem ${from}–${to} trong ${totalItems} võ sinh`;
+      document.getElementById('pageIndicator').innerText = `Trang ${currentPage}/${max}`;
+
+      document.getElementById('pageFirst').disabled = currentPage === 1;
+      document.getElementById('pagePrev').disabled = currentPage === 1;
+      document.getElementById('pageNext').disabled = currentPage === max;
+      document.getElementById('pageLast').disabled = currentPage === max;
     }
 
     function renderCandidates(list) {
-      document.getElementById('resultCount').innerText = `Hiển thị: ${list.length} võ sinh`;
+      // Đếm theo tổng kết quả lọc, không phải theo số dòng của riêng trang này.
+      document.getElementById('resultCount').innerText = `Tìm thấy: ${filteredList.length} võ sinh`;
 
       const mobileContainer = document.getElementById('mobileCandidateList');
       const desktopTbody = document.getElementById('desktopCandidateTableBody');
@@ -683,7 +836,7 @@
           item.thoiGianCheckin = res.time;
         }
         recalcStats();
-        applyFilters();
+        refreshList();   // Giữ nguyên trang đang xem, không nhảy về trang 1
         showToast(res.message + (item ? `: ${item.hoTen} (SBD ${item.sbd})` : ''), 'success');
       } else {
         if (btnElement) {
@@ -714,6 +867,7 @@
 
     function clearSearch() {
       document.getElementById('searchInput').value = '';
+      document.getElementById('btnClearSearch').classList.add('hidden');
       applyFilters();
     }
 
