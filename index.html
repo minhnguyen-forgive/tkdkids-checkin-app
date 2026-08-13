@@ -246,9 +246,15 @@
     // Dán Web App URL (dạng https://script.google.com/macros/s/<ID>/exec) vào đây
     // để lễ tân mở link là dùng được ngay, không phải tự nhập.
     // Để trống nếu chỉ chạy trong Google Apps Script.
-    const DEFAULT_GAS_API_URL = '';
+    const DEFAULT_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxg6mlt1U3zHp0Ikv5ffvi7Ec3i5-pAd3AN4UJz8GaqFFbXuddGxnTDiWBzz2E5tVEa7g/exec';
 
-    let gasApiUrl = localStorage.getItem('TKD_GAS_API_URL') || DEFAULT_GAS_API_URL;
+    // URL trong code luôn được ưu tiên hơn URL người dùng từng nhập.
+    // Nhờ vậy, một URL cũ/sai lỡ lưu trong trình duyệt sẽ không làm hỏng app nữa.
+    let gasApiUrl = DEFAULT_GAS_API_URL || localStorage.getItem('TKD_GAS_API_URL') || '';
+
+    if (DEFAULT_GAS_API_URL) {
+      try { localStorage.removeItem('TKD_GAS_API_URL'); } catch (e) {}
+    }
     let currentIsAdmin = false;
     // Token phiên quản trị. Cố ý KHÔNG lưu localStorage: đóng tab là mất quyền.
     let adminToken = '';
@@ -264,7 +270,10 @@
     }
 
     window.onload = function() {
-      if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      // Chỉ hiện ô nhập Web App URL khi code chưa có sẵn URL.
+      // Đã cấu hình sẵn thì giấu đi, tránh người dùng sửa nhầm làm hỏng app.
+      const runningOnGitHub = (typeof google === 'undefined' || !google.script || !google.script.run);
+      if (runningOnGitHub && !DEFAULT_GAS_API_URL) {
         document.getElementById('githubApiSection').classList.remove('hidden');
         document.getElementById('webAppUrlInput').value = gasApiUrl;
       }
