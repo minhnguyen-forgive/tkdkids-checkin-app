@@ -330,10 +330,20 @@ function getInitialData() {
       });
     }
 
+    // Dọn cột "Thời gian check-in" thừa bằng MỘT lệnh ghi duy nhất.
+    // Trước đây mỗi dòng là một lệnh setValue riêng: với 656 dòng thì đó là
+    // 656 lượt gọi sang Google Sheets, chính là nguyên nhân tải trang rất chậm.
     if (rowsToClearTimestamp.length > 0) {
-      rowsToClearTimestamp.forEach(rIdx => {
-        sheet.getRange(rIdx, 10).setValue('');
-      });
+      const firstRow = rowsToClearTimestamp[0];
+      const lastRow = rowsToClearTimestamp[rowsToClearTimestamp.length - 1];
+      const needClear = {};
+      rowsToClearTimestamp.forEach(function (r) { needClear[r] = true; });
+
+      const block = sheet.getRange(firstRow, 10, lastRow - firstRow + 1, 1).getValues();
+      for (let r = firstRow; r <= lastRow; r++) {
+        if (needClear[r]) block[r - firstRow][0] = '';
+      }
+      sheet.getRange(firstRow, 10, block.length, 1).setValues(block);
     }
 
     return {
@@ -362,8 +372,8 @@ function checkInCandidate(rowIndex, action) {
     
     if (action === 'checkin') {
       const nowStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'HH:mm:ss dd/MM/yyyy');
-      sheet.getRange(rowIndex, 9).setValue('Đã check-in');
-      sheet.getRange(rowIndex, 10).setValue(nowStr);
+      // Ghi 2 ô bằng 1 lệnh thay vì 2 -> check-in phản hồi nhanh hơn.
+      sheet.getRange(rowIndex, 9, 1, 2).setValues([['Đã check-in', nowStr]]);
       return { success: true, message: 'Check-in thành công', time: nowStr, status: 'Đã check-in' };
     }
   } catch (error) {
